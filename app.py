@@ -117,13 +117,16 @@ class LineBotService:
 
     def check(self):
         text = 'check ok!'
+        Log(text)
         return text
     
     def callback(self):
+        Log("callback")
         # get X-Line-Signature header value
         signature = request.headers['X-Line-Signature']
         # get request body as text
         body = request.get_data(as_text=True)
+        Log(body)
         self.app.logger.info("Request body: " + body)
         # handle webhook body
         try:
