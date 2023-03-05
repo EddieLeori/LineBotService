@@ -1,4 +1,5 @@
 from flask import Flask, request, abort
+from OpenSSL import SSL
 from lib.utility import *
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
@@ -11,6 +12,8 @@ import json
 class LineBotService:
     def __init__(self):
         self.name = 'LineBotService'
+        self.sertkey = ""
+        self.sertpem = ""
         self.host = '0.0.0.0'
         self.port = 5123
         self.botid = None
@@ -18,11 +21,12 @@ class LineBotService:
         self.token = None
         self.is_tag_reply = "0" # 是否tag才回話.1:是
         self.is_init = False
+
         self.init()
 
         self.app = Flask(__name__)
         self.app.add_url_rule("/check", methods=['POST'], view_func= self.check) 
-        self.app.add_url_rule("/callback", methods=['POST'], view_func= self.callback) 
+        self.app.add_url_rule("/callback", methods=['POST'], view_func= self.callback)
 
     def init(self):
         try:
@@ -32,6 +36,10 @@ class LineBotService:
                 Log(cfg)
                 if self.name not in cfg:
                     return
+                if "sertpem" in cfg[self.name]:
+                    self.sertpem = cfg[self.name]["sertpem"]
+                if "sertkey" in cfg[self.name]:
+                    self.sertkey = cfg[self.name]["sertkey"]
                 if "host" in cfg[self.name]:
                     self.host = cfg[self.name]["host"]
                 if "port" in cfg[self.name]:
@@ -113,7 +121,9 @@ class LineBotService:
     
     def run(self):
         if self.is_init == True:
-            self.app.run(self.host, self.port)
+            context = SSL.Context(SSL.PROTOCOL_TLSv1_2)
+            context.load_cert_chain(self.sertpem, self.sertkey)
+            self.app.run(self.host, self.port, ssl_context = context)
 
     def check(self):
         text = 'check ok!'

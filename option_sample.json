@@ -1,5 +1,7 @@
 {
 	"LineBotService":{
+		"sertkey": "ssl/cabcertpem.pem",
+		"sertpem": "ssl/private.key",
 		"host": "0.0.0.0",
 		"port":5123,
 		"botid": "your_bot_id",
