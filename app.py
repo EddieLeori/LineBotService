@@ -1,5 +1,4 @@
 from flask import Flask, request, abort
-from OpenSSL import SSL
 from lib.utility import *
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
@@ -7,7 +6,7 @@ from linebot.models import *
 
 import os
 import json
-
+import ssl
 
 class LineBotService:
     def __init__(self):
@@ -121,7 +120,7 @@ class LineBotService:
     
     def run(self):
         if self.is_init == True:
-            context = SSL.Context(SSL.PROTOCOL_TLSv1_2)
+            context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
             context.load_cert_chain(self.sertpem, self.sertkey)
             self.app.run(self.host, self.port, ssl_context = context)
 
