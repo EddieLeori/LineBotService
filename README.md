@@ -14,7 +14,7 @@ using python3.8.2
 >
 `sudo apt install curl`
 >
-pip3 install flask
+`pip3 install flask`
 >
 `pip3 install -r requirements.txt`
 >

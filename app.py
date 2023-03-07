@@ -21,6 +21,12 @@ class LineBotService:
         self.is_tag_reply = "0" # 是否tag才回話.1:是
         self.is_init = False
 
+        self.call_fun_join = None
+        self.call_fun_enter = None
+        self.call_fun_leave = None
+        self.call_fun_message = None
+        self.call_fun_postback = None
+
         self.init()
 
         self.app = Flask(__name__)
@@ -130,13 +136,12 @@ class LineBotService:
         return text
     
     def callback(self):
-        Log("callback")
         # get X-Line-Signature header value
         signature = request.headers['X-Line-Signature']
         # get request body as text
         body = request.get_data(as_text=True)
-        Log(body)
-        self.app.logger.info("Request body: " + body)
+        Log("callback={0}".format(body))
+        # self.app.logger.info("Request body: " + body)
         # handle webhook body
         try:
             self.handler.handle(body, signature)
@@ -144,33 +149,50 @@ class LineBotService:
             abort(400)
         return 'OK'
         
+    def replayMessage(self, token, msg):
+        self.line_bot_api.reply_message(token, msg)
+        Log("reply={0},{1}".format(token, msg))
+
     def join(self, token, uid, gid, name):
-        message = TextSendMessage(text=f'{name}歡迎加入')
-        Log("reply_join={0},{1}".format(token, message))
-        self.line_bot_api.reply_message(token, message)
+        if self.call_fun_join is not None:
+            self.call_fun_join(token, name)
+        else:
+            message = TextSendMessage(text=f'{name}歡迎加入')
+            self.replayMessage(token, message)
 
     def enter(self, token):
-        message = TextSendMessage(text='歡迎您！')
-        self.line_bot_api.reply_message(token, message)
+        if self.call_fun_enter is not None:
+            self.call_fun_enter(token)
+        else:
+            message = TextSendMessage(text='歡迎您！')
+            self.replayMessage(token, message)
     
     def leave(self, token):
-        message = TextSendMessage(text='感謝您！')
-        self.line_bot_api.reply_message(token, message)
+        if self.call_fun_leave is not None:
+            self.call_fun_leave(token)
+        else:
+            message = TextSendMessage(text='感謝您！')
+            self.replayMessage(token, message)
 
     def message(self, token, msg):
-        if (self.is_tag_reply == "1" and "@" + self.botid in msg or "#" + self.botid in msg) or \
+        # 判斷是否全部都回還是被tag才回
+        if (self.is_tag_reply == "1" and \
+            "@" + self.botid in msg or \
+                "#" + self.botid in msg) or \
             (self.is_tag_reply == "0"):
-            message = TextSendMessage(text=msg)
-            Log("reply_message={0},{1}".format(token, message))
-            self.line_bot_api.reply_message(token, message)
+            if self.call_fun_message is not None:
+                self.call_fun_message(token, msg)
+            else:
+                message = TextSendMessage(text=msg)
+                self.replayMessage(token, message)
         
     def postback(self, token, data):
-        if data == 'action1':
-            message = TextSendMessage(text='您点击了第一个按钮！')
-            self.line_bot_api.reply_message(token, message)
-        elif data == 'action2':
-            # 给用户发送消息
-            message = TextSendMessage(text='您点击了第二个按钮！')
-            self.line_bot_api.reply_message(token, message)
-
+        if self.call_fun_postback is not None:
+            self.call_fun_postback(token, data)
+        else:
+            if data == 'action1':
+                message = TextSendMessage(text='您点击了第一个按钮！')
+            elif data == 'action2':
+                message = TextSendMessage(text='您点击了第二个按钮！')
+            self.replayMessage(token, message)
 
